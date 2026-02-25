@@ -1,47 +1,46 @@
 <?php
-class Skills {
 
-private const BOULE_DE_FEU_MIN_LV = 5;
-private const COUTEAU_MIN_LV = 10;
-private const M9_MIN_LV = 15;
-private const REMINGTON_3700_MIN_LV = 19;
+class Skill
+{
+    private int $id;
+    private string $name;
+    private int $requiredLevel;
+    private int $multiplier;
 
-
-    public static function BouleDeFeu(Hero $hero, Monster $monster): void
+    public function __construct(int $id, string $name, int $requiredLevel, int $multiplier)
     {
-        if ($hero->getLv() < Skills::BOULE_DE_FEU_MIN_LV) {
-            throw new Exception("Boule de Feu is only available at level " . Skills::BOULE_DE_FEU_MIN_LV . " or higher.");
-        }
-        $damage = $hero->getAtk() * 2; 
-        $monster->takeDamage($damage);
+        $this->id = $id;
+        $this->name = $name;
+        $this->requiredLevel = $requiredLevel;
+        $this->multiplier = $multiplier;
     }
 
-    public static function Couteau(Hero $hero, Monster $monster): void
+    public function getId(): int
     {
-        if ($hero->getLv() < Skills::COUTEAU_MIN_LV) {
-            throw new Exception("Couteau is only available at level " . Skills::COUTEAU_MIN_LV . " or higher.");
-        }
-        $damage = $hero->getAtk() * 3; 
-        $monster->takeDamage($damage);
+        return $this->id;
     }
 
-       public static function M9(Hero $hero, Monster $monster): void
+    public function getName(): string
     {
-        if ($hero->getLv() < Skills::M9_MIN_LV) {
-            throw new Exception("M9 is only available at level " . Skills::M9_MIN_LV . " or higher.");
-        }
-        $damage = $hero->getAtk() * 4; 
-        $monster->takeDamage($damage);
-    }
-    
-       public static function Remington3700(Hero $hero, Monster $monster): void
-    {
-        if ($hero->getLv() < Skills::REMINGTON_3700_MIN_LV) {
-            throw new Exception("Remington 3700 is only available at level " . Skills::REMINGTON_3700_MIN_LV . " or higher.");
-        }
-        $damage = $hero->getAtk() * 5; 
-        $monster->takeDamage($damage);
+        return $this->name;
     }
 
-    
+    public function getRequiredLevel(): int
+    {
+        return $this->requiredLevel;
+    }
+
+    public function use(Hero $hero, Hero $monster): int
+    {
+        if ($hero->getLv() < $this->requiredLevel) {
+            throw new Exception(
+                "{$this->name} débloqué au niveau {$this->requiredLevel}"
+            );
+        }
+
+        $damage = $hero->getAtk() * $this->multiplier;
+        $monster->takeDamage($damage);
+
+        return $damage;
+    }
 }

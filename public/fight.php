@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 session_start();
+
 require_once __DIR__ . '/../src/Entities/Hero.php';
+require_once __DIR__ . '/../src/Entities/Skills.php';
 require_once __DIR__ . '/../src/Repositories/HeroesRepository.php';
 
 $pdo = new PDO('mysql:host=localhost;dbname=d', 'root', '');
@@ -17,6 +19,23 @@ $skillsStmt = $pdo->query("SELECT id, required_lv, skill_name FROM skills ORDER 
 $skillsList = $skillsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
+
+
+require_once __DIR__ . '/../src/Entities/Skills.php';
+
+$skillsObjects = [];
+
+foreach ($skillsList as $s) {
+    // Exemple : multiplier = id + 1 (ou adapte selon ta logique)
+    $multiplier = (int)$s['id'] + 2;
+
+    $skillsObjects[$s['id']] = new Skill(
+        (int)$s['id'],
+        $s['skill_name'],
+        (int)$s['required_lv'],
+        $multiplier
+    );
+}
 
 
 $heroId = null;
@@ -118,8 +137,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $log = [];
 
 
-        $hero->attack($monster);
-        $log[] = $hero->getName() . ' attaque et inflige ' . $hero->getAtk() . ' dégâts.';
+        $selectedSkillId = isset($_POST['skill_id']) ? (int)$_POST['skill_id'] : 1;
+
+
+        $skill = $skillsObjects[$selectedSkillId];
+
+        try {
+            $damage = $skill->use($heroEntity, $monster);
+            $log[] = $heroEntity->getName() . " utilise {$skill->getName()} et inflige {$damage} dégâts.";
+        } catch (Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+            exit;
+        }
 
         $_SESSION['monster_hp'] = $monster->getHp();
 
@@ -701,12 +730,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             <div class="control-col" style="display:flex; flex-direction:column; gap:12px;">
                 <div class="select-pixel">
                     <select id="attack-select" class="bg-[#0e1722] text-white p-2">
-                        <?php foreach ($skillsList as $s): ?>
-                            <option value="<?php echo $s['id']; ?>" <?php echo (isset($_SESSION['hero_id']) && (int)$_SESSION['hero_id'] === (int)$s['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($s['skill_name']); ?></option>
-                        <?php endforeach; ?>
+                      <?php foreach ($skillsList as $s): ?>
+    <?php
+        $isLocked = $heroEntity->getLv() < (int)$s['required_lv'];
+    ?>
+    <option value="<?php echo $s['id']; ?>"
+        <?php echo $isLocked ? 'disabled' : ''; ?>>
+        
+        <?php echo htmlspecialchars($s['skill_name']); ?>
+
+        <?php if ($isLocked): ?>
+            (Niv. <?php echo $s['required_lv']; ?> requis)
+        <?php endif; ?>
+
+    </option>
+<?php endforeach; ?>
                     </select>
                 </div>
-                <div  style="display:flex; gap:12px; align-items:center; justify-content:center;">
+                <div style="display:flex; gap:12px; align-items:center; justify-content:center;">
                     <button id="attack-btn" class="ut-btn orange small">FIGHT</button>
                     <button id="reset-btn" class="ut-btn orange small">KILL ANOTHER MONSTER</button>
                 </div>
@@ -794,6 +835,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 const form = new FormData();
                 form.append('action', 'attack');
+                form.append('skill_id', document.getElementById('attack-select').value);
 
                 const resp = await fetch('', {
                     method: 'POST',
@@ -864,7 +906,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             attackBtn.disabled = true;
                         } else {
                             attackBtn.disabled = false;
-           
+
                         }
                     } catch (e) {
                         showMsg('ya un problem', 3000);
@@ -922,6 +964,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 showMsg('Sélection invalide', 2000);
             }
             chooseHeroBtn.disabled = false;
+              location.reload();
         });
 
         // Persist green-grid animation progress across reloads
