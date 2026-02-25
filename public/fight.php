@@ -137,8 +137,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $log = [];
 
 
-        $selectedSkillId = isset($_POST['skill_id']) ? (int)$_POST['skill_id'] : 1;
+        $selectedSkillId = isset($_POST['skill_id']) ? (int)$_POST['skill_id'] : 0;
 
+        if (!isset($skillsObjects[$selectedSkillId])) {
+            echo json_encode(['error' => 'Skill introuvable']);
+            exit;
+        }
 
         $skill = $skillsObjects[$selectedSkillId];
 
@@ -730,21 +734,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             <div class="control-col" style="display:flex; flex-direction:column; gap:12px;">
                 <div class="select-pixel">
                     <select id="attack-select" class="bg-[#0e1722] text-white p-2">
-                      <?php foreach ($skillsList as $s): ?>
-    <?php
-        $isLocked = $heroEntity->getLv() < (int)$s['required_lv'];
-    ?>
-    <option value="<?php echo $s['id']; ?>"
-        <?php echo $isLocked ? 'disabled' : ''; ?>>
-        
-        <?php echo htmlspecialchars($s['skill_name']); ?>
+                        <?php foreach ($skillsList as $s): ?>
+                            <?php
+                            $isLocked = $heroEntity->getLv() < (int)$s['required_lv'];
+                            ?>
+                            <option value="<?php echo $s['id']; ?>"
+                                <?php echo $isLocked ? 'disabled' : ''; ?>>
 
-        <?php if ($isLocked): ?>
-            (Niv. <?php echo $s['required_lv']; ?> requis)
-        <?php endif; ?>
+                                <?php echo htmlspecialchars($s['skill_name']); ?>
 
-    </option>
-<?php endforeach; ?>
+                                <?php if ($isLocked): ?>
+                                    (Niv. <?php echo $s['required_lv']; ?> requis)
+                                <?php endif; ?>
+
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center; justify-content:center;">
@@ -843,6 +847,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 });
                 if (!resp.ok) throw new Error('network');
                 const data = await resp.json();
+                if (data.error) {
+                    showMsg(data.error, 3000);
+                    attackBtn.disabled = false;
+                    return;
+                }
 
                 monsterHpEl.textContent = data.monster_hp + ' / ' + monsterMax + ' HP';
                 monsterBar.style.width = Math.max(0, Math.min(100, Math.round(data.monster_hp / monsterMax * 100))) + '%';
@@ -964,7 +973,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 showMsg('Sélection invalide', 2000);
             }
             chooseHeroBtn.disabled = false;
-              location.reload();
+            location.reload();
         });
 
         // Persist green-grid animation progress across reloads
