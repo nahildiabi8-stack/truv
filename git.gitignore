@@ -1,0 +1,6 @@
+node_modules
+package-lock.json
+package.json
+./assets/node_modules
+./assets/package-lock.json
+./assets/package.json
