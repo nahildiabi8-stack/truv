@@ -26,7 +26,6 @@ require_once __DIR__ . '/../src/Entities/Skills.php';
 $skillsObjects = [];
 
 foreach ($skillsList as $s) {
-    // Exemple : multiplier = id + 1 (ou adapte selon ta logique)
     $multiplier = (int)$s['id'] + 2;
 
     $skillsObjects[$s['id']] = new Skill(
@@ -668,6 +667,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 </head>
 
 <body class="bg-black select-none min-h-screen flex items-center justify-center p-6 ">
+
+    <audio id="bg-music" loop>
+        <source src="../assets/sounds/background.mp3" type="audio/mpeg">
+    </audio>
+
+
     <div class="green-grid" aria-hidden="true"></div>
     <div class="bg-[#000000] p-6 rounded-md shadow-lg w-full max-w-3xl text-white pixelated-ui pixel-border relative">
         <section class="flex flex-col items-center gap-4">
@@ -833,6 +838,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         attackBtn.addEventListener('click', async () => {
             attackBtn.disabled = true;
+            
 
 
 
@@ -1000,6 +1006,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 console.warn('grid sync failed', e);
             }
         })();
+
+        const bgMusic = document.getElementById('bg-music');
+
+        // Lance la musique au premier clic utilisateur
+        document.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.4; // volume 30%
+                bgMusic.play();
+            }
+        }, {
+            once: true
+        });
     </script>
 
 </body>
